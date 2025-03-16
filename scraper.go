@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/gocolly/colly"
 )
@@ -17,6 +19,15 @@ func main() {
 		colly.AllowedDomains("www.scrapingcourse.com"),
 	)
 	var products []Product
+	var visitedUrls sync.Map
+
+	// Set a custom user agent to avoid being blocked
+	// c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
+	// err := c.SetProxy("https://13.38.153.36:80")
+	// if err != nil {
+	// 	log.Fatal("Failed to set proxy", err)
+	// }
 
 	c.OnHTML("li.product", func(h *colly.HTMLElement) {
 		// Scraping logic
@@ -29,12 +40,24 @@ func main() {
 		products = append(products, product)
 	})
 
+	c.OnHTML("a.next", func(h *colly.HTMLElement) {
+		nextPage := h.Attr("href")
+
+		if _, found := visitedUrls.Load(nextPage); !found {
+			fmt.Println("scraping:", nextPage)
+			visitedUrls.Store(nextPage, struct{}{})
+			h.Request.Visit(nextPage)
+		}
+	})
+
 	c.OnScraped(func(r *colly.Response) {
 		file, err := os.Create("products.csv")
 		if err != nil {
 			log.Fatal("Failed to create file", err)
 		}
+
 		defer file.Close()
+
 		writer := csv.NewWriter(file)
 
 		// Write the csv headers
