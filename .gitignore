@@ -1,0 +1,7 @@
+*.out
+coverage.out
+.vscode/
+.cursor
+*.exe
+bin/
+*.o
