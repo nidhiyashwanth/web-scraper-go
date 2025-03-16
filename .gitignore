@@ -5,3 +5,7 @@ coverage.out
 *.exe
 bin/
 *.o
+.env
+.env.local
+.env.development
+.env.production
